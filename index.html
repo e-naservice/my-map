@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta property="og:title" content="北九州加盟店マップ" />
+    <meta property="og:description" content="北九州市のお得なクーポンも配信中！加盟店を探せるマップアプリです。" />
+    <meta property="og:type" content="website" />
+
     <title>北九州加盟店マップ</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -36,10 +42,12 @@
         .detail-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .detail-slider::-webkit-scrollbar { display: none; }
         .detail-slide-item { min-width: 100%; scroll-snap-align: start; }
-        .detail-slide-img { width: 100%; height: 250px; object-fit: cover; display: block; }
+        .detail-slide-img { width: 100%; height: 250px; object-fit: cover; display: block; cursor: pointer; }
 
         .card-body { padding: 24px; }
+        /* カテゴリタグのデザイン */
         .card-cat { display: inline-block; font-size: 11px; font-weight: bold; color: var(--primary-dark); background: var(--primary-light); padding: 6px 14px; border-radius: 20px; margin-bottom: 12px; letter-spacing: 0.05em; }
+        
         .card h3 { margin: 0 0 15px 0; font-size: 18px; line-height: 1.5; }
         .info-row { display: flex; align-items: flex-start; margin-bottom: 10px; font-size: 14px; }
         .info-icon { width: 24px; color: var(--primary); text-align: center; margin-right: 12px; font-size: 16px; margin-top: 1px; }
@@ -64,9 +72,16 @@
         .leaflet-popup-content { margin: 0; width: 280px !important; }
         .popup-img { width: 100%; height: 140px; object-fit: cover; background: #fff0f0; }
         .popup-body { padding: 16px; }
-        .popup-title { font-weight: bold; font-size: 16px; display: block; margin-bottom: 8px; }
+        .popup-title { font-weight: bold; font-size: 16px; display: block; margin-bottom: 8px; margin-top: 8px; } /* マージン調整 */
         .popup-meta { font-size: 13px; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; line-height: 1.5; }
         .popup-meta i { width: 16px; text-align: center; color: var(--primary); margin-top: 3px; }
+
+        /* ピン押下時のカテゴリ用スタイル */
+        .popup-cat {
+            display: inline-block; font-size: 10px; font-weight: bold;
+            color: var(--primary-dark); background: var(--primary-light);
+            padding: 4px 10px; border-radius: 15px; letter-spacing: 0.05em;
+        }
 
         #drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(93, 64, 55, 0.2); backdrop-filter: blur(2px); z-index: 2000; display: none; opacity: 0; transition: opacity 0.3s; }
         #drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 2001; transition: left 0.3s cubic-bezier(0.25, 1, 0.5, 1); display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(255, 107, 107, 0.1); }
@@ -103,7 +118,6 @@
     <div id="drawer">
         <div class="drawer-header">Menu</div>
         <div class="search-box">
-            <div style="margin-bottom:8px; font-size:12px; font-weight:bold; color: var(--text-sub);">キーワード検索</div>
             <input type="text" class="search-input" id="keyword-search" placeholder="店名、住所、ジャンルなど..." oninput="filterData()">
         </div>
         <div class="drawer-item" onclick="getMyLocation(); closeDrawer();"><i class="fa-solid fa-location-crosshairs"></i> 現在地を表示</div>
@@ -115,7 +129,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // ★★★ あなたのURLを埋め込み済み ★★★
+        // ★★★ あなたのGAS URL ★★★
         const API_URL = "https://script.google.com/macros/s/AKfycbxlqdGFsGAteMhVTA63JdGK3L_ySKgBP3SsOTLBvRoRnsisttyE3c5WJpkEcps51YCtqw/exec"; 
 
         let map, allData = [], filteredData = [], markers = [], isMapView = true, currentCategory = 'all';
@@ -155,22 +169,38 @@
             renderData(filteredData);
         }
 
+        // ★画像のURLを自動修正する関数（重要）
+        function formatImageUrl(url) {
+            if(!url) return 'https://placehold.jp/300x200.png?text=No+Image';
+            let clean = url.trim();
+            // Googleドライブの共有リンクを画像埋め込み用に変換
+            if(clean.includes("drive.google.com") && clean.includes("/view")) {
+                return clean.replace("/view", "/preview").replace("file/d/", "uc?id=").replace("/preview", "&export=view");
+            }
+            if(clean.includes("drive.google.com") && clean.includes("open?id=")) {
+                return clean.replace("open?id=", "uc?export=view&id=");
+            }
+            return clean;
+        }
+
         function renderData(data) {
             markers.forEach(m => map.removeLayer(m)); markers = [];
             const list = document.getElementById('list-view'); list.innerHTML = "";
             if(data.length === 0) { list.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;">該当する店舗が見つかりません</div>'; return; }
 
             data.forEach(shop => {
-                const shopImgs = shop.image ? shop.image.split(',') : ['https://placehold.jp/300x200.png?text=No+Image'];
-                const mainImg = shopImgs[0].trim();
+                // 画像処理（複数対応＆URL自動修正）
+                const shopImgs = shop.image ? shop.image.split(',') : [];
+                const mainImg = formatImageUrl(shopImgs[0]);
 
                 if(shop.lat && shop.lng) {
                     const marker = L.marker([shop.lat, shop.lng]).addTo(map);
+                    // ★ピン詳細のカスタマイズ（カテゴリを詳細と同じタグ風に、定休日追加）
                     marker.bindPopup(`<div>
                         <img src="${mainImg}" class="popup-img" referrerpolicy="no-referrer">
                         <div class="popup-body">
+                            <span class="popup-cat">${shop.category}</span>
                             <span class="popup-title">${shop.name}</span>
-                            <div class="popup-meta"><i class="fa-solid fa-tag"></i> ${shop.category}</div>
                             <div class="popup-meta"><i class="fa-solid fa-location-dot"></i> ${shop.address || '住所なし'}</div>
                             <div class="popup-meta"><i class="fa-regular fa-clock"></i> ${shop.hours || '営業情報なし'}</div>
                             <div class="popup-meta"><i class="fa-solid fa-ban"></i> ${shop.closed ? '定休: '+shop.closed : '定休なし'}</div>
@@ -193,25 +223,31 @@
             const url = shop.url ? `<div class="info-row"><div class="info-icon"><i class="fa-solid fa-globe"></i></div><div class="info-content"><a href="${shop.url}" target="_blank" class="info-link">公式サイト</a></div></div>` : '';
 
             let imgSec = '';
+            // ★詳細画面のみスライダー表示（複数画像がある場合）
             if (isDetail && shop.image && shop.image.includes(',')) {
                 let slides = '';
                 shop.image.split(',').forEach(src => {
-                    slides += `<div class="detail-slide-item"><img src="${src.trim()}" class="detail-slide-img" referrerpolicy="no-referrer" onclick="openImageModal('${src.trim()}')"></div>`;
+                    const cSrc = formatImageUrl(src);
+                    slides += `<div class="detail-slide-item"><img src="${cSrc}" class="detail-slide-img" referrerpolicy="no-referrer" onclick="openImageModal('${cSrc}')"></div>`;
                 });
-                imgSec = `<div style="position:relative"><div class="detail-slider">${slides}</div><div class="slide-hint">横へスライド</div></div>`;
+                imgSec = `<div style="position:relative"><div class="detail-slider">${slides}</div></div>`;
             } else {
                 imgSec = `<img src="${imgUrl}" class="card-img" referrerpolicy="no-referrer" onclick="openImageModal('${imgUrl}')">`;
             }
 
+            // ★クーポンボタン復活ロジック
             let couponHtml = '';
             if (shop.coupon_imgs) {
                 const imgList = shop.coupon_imgs.split(',');
                 const urlList = shop.coupon_urls ? shop.coupon_urls.split(',') : [];
                 let slides = '';
                 imgList.forEach((img, i) => {
-                    const cImg = img.trim(); if(!cImg) return;
+                    const cImg = formatImageUrl(img); 
+                    // クーポンURLがある場合はボタン、なければdisabled
                     const cUrl = urlList[i] ? urlList[i].trim() : (shop.coupon_url || "");
-                    const btn = cUrl ? `<a href="${cUrl}" target="_blank" class="coupon-btn">クーポンを使う</a>` : `<span class="coupon-btn disabled">クーポンなし</span>`;
+                    const btn = cUrl 
+                        ? `<a href="${cUrl}" target="_blank" class="coupon-btn">クーポンを使う</a>` 
+                        : `<span class="coupon-btn disabled">クーポンなし</span>`;
                     slides += `<div class="coupon-item"><img src="${cImg}" class="coupon-thumb" referrerpolicy="no-referrer" onclick="openImageModal('${cImg}')">${btn}</div>`;
                 });
                 if(slides) couponHtml = `<div class="coupon-area"><span class="coupon-title"><i class="fa-solid fa-gift"></i> お得なクーポン${imgList.length>1?" (横にスライド)":""}</span><div class="coupon-slider">${slides}</div></div>`;
@@ -219,7 +255,7 @@
                 couponHtml = `<div class="coupon-area"><span class="coupon-title"><i class="fa-solid fa-gift"></i> お得なクーポン</span><a href="${shop.coupon_url}" target="_blank" class="coupon-btn">クーポンを使う</a></div>`;
             }
 
-            const route = (shop.lat && shop.lng) ? `https://www.google.com/maps/dir/?api=1&destination=$${shop.lat},${shop.lng}` : "";
+            const route = (shop.lat && shop.lng) ? `https://www.google.com/maps/dir/?api=1&destination=${shop.lat},${shop.lng}` : "";
 
             return `
                 ${imgSec}
@@ -240,7 +276,9 @@
 
         window.openDetailModal = function(id) {
             const shop = allData.find(s => s.id == id); if (!shop) return;
-            const mainImg = shop.image ? shop.image.split(',')[0].trim() : 'https://placehold.jp/300x200.png?text=No+Image';
+            const shopImgs = shop.image ? shop.image.split(',') : [];
+            const mainImg = formatImageUrl(shopImgs[0]);
+            // 詳細モードONで作成
             const html = createCardHTML(shop, mainImg, true);
             const content = document.getElementById('detail-content');
             content.innerHTML = `<div id="detail-close-btn" onclick="document.getElementById('detail-modal').style.display='none'">×</div><div class="card" style="margin-bottom:0; box-shadow:none; border:none; border-radius:16px;">${html}</div>`;

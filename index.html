@@ -169,16 +169,18 @@
             renderData(filteredData);
         }
 
-        // ★Googleドライブ画像の強力なURL変換
+     // ★Googleドライブ画像を強制表示させる強力な変換機能
         function formatImageUrl(url) {
             if(!url) return 'https://placehold.jp/300x200.png?text=No+Image';
             let clean = url.trim();
-            // GoogleドライブのID抽出(d/xxx/ または id=xxx)
+            
+            // GoogleドライブのID抽出 (d/xxxxx/ または id=xxxxx)
             const idMatch = clean.match(/\/d\/(.+?)\/|id=(.+?)(&|$)/);
+            
             if(clean.includes("drive.google") && idMatch) {
                 const id = idMatch[1] || idMatch[2];
-                // 直リンク形式に変換
-                return `https://drive.google.com/uc?export=view&id=${id}`;
+                // ★ここがポイント：ブロックされにくい魔法のドメイン「lh3」を使う
+                return `https://lh3.googleusercontent.com/d/${id}`;
             }
             return clean;
         }

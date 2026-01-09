@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta property="og:title" content="北九州加盟店マップ" />
+    <meta property="og:description" content="北九州市のお得なクーポンも配信中！加盟店を探せるマップアプリです。" />
+    <meta property="og:type" content="website" />
+
     <title>北九州加盟店マップ</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -52,24 +58,24 @@
         .btn-web { background: var(--accent-bg); color: var(--accent); }
         .btn-sns { background: #fdf2f8; color: #db2777; }
 
-        /* クーポンデザイン（画像とボタンを確実に表示） */
+        /* クーポンエリア（画像＋ボタン表示対策済み） */
         .coupon-area { background: #fff; border: 2px dashed var(--primary); border-radius: 12px; padding: 16px; margin-top: 24px; }
         .coupon-title { font-size: 12px; font-weight: bold; color: var(--primary); margin-bottom: 12px; display: block; letter-spacing: 0.05em; }
         .coupon-slider { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
         .coupon-item { 
-            width: 280px; /* 幅固定 */
+            width: 280px; /* 固定幅 */
             background: white; border-radius: 10px; 
             box-shadow: 0 4px 10px rgba(255, 107, 107, 0.1); 
             border: 1px solid var(--primary-light); 
             overflow: hidden; flex-shrink: 0; scroll-snap-align: center; 
-            display: flex; flex-direction: column; 
+            display: flex; flex-direction: column; /* 縦並び */
         }
-        /* 画像：高さ固定でスペース確保 */
+        /* 画像高さを固定してスペースを確保 */
         .coupon-thumb { 
             width: 100%; height: 180px; 
             object-fit: cover; background: #fff; cursor: pointer; display: block; 
         }
-        /* ボタン：画像の下に配置 */
+        /* ボタン設定 */
         .coupon-btn { 
             display: block; background: var(--primary); color: white; text-align: center; padding: 12px; text-decoration: none; font-weight: bold; font-size: 13px; letter-spacing: 0.05em; 
         }
@@ -130,6 +136,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // ★★★ GAS URL (設定済み) ★★★
         const API_URL = "https://script.google.com/macros/s/AKfycbxlqdGFsGAteMhVTA63JdGK3L_ySKgBP3SsOTLBvRoRnsisttyE3c5WJpkEcps51YCtqw/exec"; 
 
         let map, allData = [], filteredData = [], markers = [], isMapView = true, currentCategory = 'all';
@@ -169,17 +176,14 @@
             renderData(filteredData);
         }
 
-     // ★Googleドライブ画像を強制表示させる強力な変換機能
+        // ★Googleドライブ画像の強力なURL変換 (HTTPS & lh3ドメイン)
         function formatImageUrl(url) {
             if(!url) return 'https://placehold.jp/300x200.png?text=No+Image';
             let clean = url.trim();
-            
-            // GoogleドライブのID抽出 (d/xxxxx/ または id=xxxxx)
             const idMatch = clean.match(/\/d\/(.+?)\/|id=(.+?)(&|$)/);
-            
             if(clean.includes("drive.google") && idMatch) {
                 const id = idMatch[1] || idMatch[2];
-                // ★ここがポイント：ブロックされにくい魔法のドメイン「lh3」を使う
+                // lh3.googleusercontent.com/d/ を使用して確実に表示
                 return `https://lh3.googleusercontent.com/d/${id}`;
             }
             return clean;

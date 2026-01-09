@@ -3,13 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <meta property="og:title" content="北九州加盟店マップ" />
-    <meta property="og:description" content="北九州市のお得なクーポンも配信中！加盟店を探せるマップアプリです。" />
-    <meta property="og:type" content="website" />
-
     <title>北九州加盟店マップ</title>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -58,27 +52,25 @@
         .btn-web { background: var(--accent-bg); color: var(--accent); }
         .btn-sns { background: #fdf2f8; color: #db2777; }
 
-        /* --- クーポンCSS修正（ボタン表示対策） --- */
+        /* クーポンデザイン（画像とボタンを確実に表示） */
         .coupon-area { background: #fff; border: 2px dashed var(--primary); border-radius: 12px; padding: 16px; margin-top: 24px; }
         .coupon-title { font-size: 12px; font-weight: bold; color: var(--primary); margin-bottom: 12px; display: block; letter-spacing: 0.05em; }
         .coupon-slider { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
         .coupon-item { 
-            width: 1000px; max-width: 85vw; aspect-ratio: 1000/665; 
+            width: 280px; /* 幅固定 */
             background: white; border-radius: 10px; 
             box-shadow: 0 4px 10px rgba(255, 107, 107, 0.1); 
             border: 1px solid var(--primary-light); 
             overflow: hidden; flex-shrink: 0; scroll-snap-align: center; 
-            display: flex; flex-direction: column; /* タテ並び */
+            display: flex; flex-direction: column; 
         }
-        /* 画像：残りのスペースを埋める（高さ100%ではなくflexで自動調整） */
+        /* 画像：高さ固定でスペース確保 */
         .coupon-thumb { 
-            width: 100%; height: auto; 
-            flex: 1; /* ここ重要：ボタンのスペースを残して広がる */
+            width: 100%; height: 180px; 
             object-fit: cover; background: #fff; cursor: pointer; display: block; 
         }
-        /* ボタン：高さを確保 */
+        /* ボタン：画像の下に配置 */
         .coupon-btn { 
-            flex-shrink: 0; /* 縮まないようにする */
             display: block; background: var(--primary); color: white; text-align: center; padding: 12px; text-decoration: none; font-weight: bold; font-size: 13px; letter-spacing: 0.05em; 
         }
         .coupon-btn.disabled { background: #e0e0e0; color: #aaa; pointer-events: none; }
@@ -138,7 +130,6 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // ★★★ 指定のGAS URL (書き換え済み) ★★★
         const API_URL = "https://script.google.com/macros/s/AKfycbxlqdGFsGAteMhVTA63JdGK3L_ySKgBP3SsOTLBvRoRnsisttyE3c5WJpkEcps51YCtqw/exec"; 
 
         let map, allData = [], filteredData = [], markers = [], isMapView = true, currentCategory = 'all';
@@ -178,14 +169,16 @@
             renderData(filteredData);
         }
 
+        // ★Googleドライブ画像の強力なURL変換
         function formatImageUrl(url) {
             if(!url) return 'https://placehold.jp/300x200.png?text=No+Image';
             let clean = url.trim();
-            if(clean.includes("drive.google.com") && clean.includes("/view")) {
-                return clean.replace("/view", "/preview").replace("file/d/", "uc?id=").replace("/preview", "&export=view");
-            }
-            if(clean.includes("drive.google.com") && clean.includes("open?id=")) {
-                return clean.replace("open?id=", "uc?export=view&id=");
+            // GoogleドライブのID抽出(d/xxx/ または id=xxx)
+            const idMatch = clean.match(/\/d\/(.+?)\/|id=(.+?)(&|$)/);
+            if(clean.includes("drive.google") && idMatch) {
+                const id = idMatch[1] || idMatch[2];
+                // 直リンク形式に変換
+                return `https://drive.google.com/uc?export=view&id=${id}`;
             }
             return clean;
         }
@@ -228,9 +221,10 @@
             const url = shop.url ? `<div class="info-row"><div class="info-icon"><i class="fa-solid fa-globe"></i></div><div class="info-content"><a href="${shop.url}" target="_blank" class="info-link">公式サイト</a></div></div>` : '';
 
             let imgSec = '';
-            if (isDetail && shop.image && shop.image.includes(',')) {
+            const shopImgs = shop.image ? shop.image.split(',').filter(s => s.trim()) : [];
+            if (isDetail && shopImgs.length > 1) {
                 let slides = '';
-                shop.image.split(',').forEach(src => {
+                shopImgs.forEach(src => {
                     const cSrc = formatImageUrl(src);
                     slides += `<div class="detail-slide-item"><img src="${cSrc}" class="detail-slide-img" referrerpolicy="no-referrer" onclick="openImageModal('${cSrc}')"></div>`;
                 });
@@ -239,16 +233,13 @@
                 imgSec = `<img src="${imgUrl}" class="card-img" referrerpolicy="no-referrer" onclick="openImageModal('${imgUrl}')">`;
             }
 
-            // ★クーポンボタンロジックの強化
             let couponHtml = '';
             if (shop.coupon_imgs) {
                 const imgList = shop.coupon_imgs.split(',');
-                // GASからのURLがカンマ区切り文字列で来ているか、なければ空配列
                 const urlList = (shop.coupon_urls || "").split(',');
                 let slides = '';
                 imgList.forEach((img, i) => {
                     const cImg = formatImageUrl(img);
-                    // 対応するURLを取得、なければ空文字
                     const cUrl = urlList[i] ? urlList[i].trim() : "";
                     const btn = cUrl 
                         ? `<a href="${cUrl}" target="_blank" class="coupon-btn">クーポンを使う</a>` 

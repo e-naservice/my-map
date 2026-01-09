@@ -45,9 +45,7 @@
         .detail-slide-img { width: 100%; height: 250px; object-fit: cover; display: block; cursor: pointer; }
 
         .card-body { padding: 24px; }
-        /* カテゴリタグのデザイン */
         .card-cat { display: inline-block; font-size: 11px; font-weight: bold; color: var(--primary-dark); background: var(--primary-light); padding: 6px 14px; border-radius: 20px; margin-bottom: 12px; letter-spacing: 0.05em; }
-        
         .card h3 { margin: 0 0 15px 0; font-size: 18px; line-height: 1.5; }
         .info-row { display: flex; align-items: flex-start; margin-bottom: 10px; font-size: 14px; }
         .info-icon { width: 24px; color: var(--primary); text-align: center; margin-right: 12px; font-size: 16px; margin-top: 1px; }
@@ -60,28 +58,39 @@
         .btn-web { background: var(--accent-bg); color: var(--accent); }
         .btn-sns { background: #fdf2f8; color: #db2777; }
 
+        /* --- クーポンCSS修正（ボタン表示対策） --- */
         .coupon-area { background: #fff; border: 2px dashed var(--primary); border-radius: 12px; padding: 16px; margin-top: 24px; }
         .coupon-title { font-size: 12px; font-weight: bold; color: var(--primary); margin-bottom: 12px; display: block; letter-spacing: 0.05em; }
         .coupon-slider { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
-        .coupon-item { width: 1000px; max-width: 85vw; aspect-ratio: 1000/665; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(255, 107, 107, 0.1); border: 1px solid var(--primary-light); overflow: hidden; flex-shrink: 0; scroll-snap-align: center; display: flex; flex-direction: column; }
-        .coupon-thumb { width: 100%; height: 100%; object-fit: contain; background: #fff; cursor: pointer; display: block; flex: 1; }
-        .coupon-btn { display: block; background: var(--primary); color: white; text-align: center; padding: 12px; text-decoration: none; font-weight: bold; font-size: 13px; letter-spacing: 0.05em; }
+        .coupon-item { 
+            width: 1000px; max-width: 85vw; aspect-ratio: 1000/665; 
+            background: white; border-radius: 10px; 
+            box-shadow: 0 4px 10px rgba(255, 107, 107, 0.1); 
+            border: 1px solid var(--primary-light); 
+            overflow: hidden; flex-shrink: 0; scroll-snap-align: center; 
+            display: flex; flex-direction: column; /* タテ並び */
+        }
+        /* 画像：残りのスペースを埋める（高さ100%ではなくflexで自動調整） */
+        .coupon-thumb { 
+            width: 100%; height: auto; 
+            flex: 1; /* ここ重要：ボタンのスペースを残して広がる */
+            object-fit: cover; background: #fff; cursor: pointer; display: block; 
+        }
+        /* ボタン：高さを確保 */
+        .coupon-btn { 
+            flex-shrink: 0; /* 縮まないようにする */
+            display: block; background: var(--primary); color: white; text-align: center; padding: 12px; text-decoration: none; font-weight: bold; font-size: 13px; letter-spacing: 0.05em; 
+        }
         .coupon-btn.disabled { background: #e0e0e0; color: #aaa; pointer-events: none; }
 
         .leaflet-popup-content-wrapper { padding: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 5px 25px rgba(255, 107, 107, 0.2); }
         .leaflet-popup-content { margin: 0; width: 280px !important; }
         .popup-img { width: 100%; height: 140px; object-fit: cover; background: #fff0f0; }
         .popup-body { padding: 16px; }
-        .popup-title { font-weight: bold; font-size: 16px; display: block; margin-bottom: 8px; margin-top: 8px; } /* マージン調整 */
+        .popup-title { font-weight: bold; font-size: 16px; display: block; margin-bottom: 8px; margin-top: 8px; }
         .popup-meta { font-size: 13px; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; line-height: 1.5; }
         .popup-meta i { width: 16px; text-align: center; color: var(--primary); margin-top: 3px; }
-
-        /* ピン押下時のカテゴリ用スタイル */
-        .popup-cat {
-            display: inline-block; font-size: 10px; font-weight: bold;
-            color: var(--primary-dark); background: var(--primary-light);
-            padding: 4px 10px; border-radius: 15px; letter-spacing: 0.05em;
-        }
+        .popup-cat { display: inline-block; font-size: 10px; font-weight: bold; color: var(--primary-dark); background: var(--primary-light); padding: 4px 10px; border-radius: 15px; letter-spacing: 0.05em; }
 
         #drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(93, 64, 55, 0.2); backdrop-filter: blur(2px); z-index: 2000; display: none; opacity: 0; transition: opacity 0.3s; }
         #drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: #fff; z-index: 2001; transition: left 0.3s cubic-bezier(0.25, 1, 0.5, 1); display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(255, 107, 107, 0.1); }
@@ -129,7 +138,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // ★★★ あなたのGAS URL ★★★
+        // ★★★ 指定のGAS URL (書き換え済み) ★★★
         const API_URL = "https://script.google.com/macros/s/AKfycbxlqdGFsGAteMhVTA63JdGK3L_ySKgBP3SsOTLBvRoRnsisttyE3c5WJpkEcps51YCtqw/exec"; 
 
         let map, allData = [], filteredData = [], markers = [], isMapView = true, currentCategory = 'all';
@@ -169,11 +178,9 @@
             renderData(filteredData);
         }
 
-        // ★画像のURLを自動修正する関数（重要）
         function formatImageUrl(url) {
             if(!url) return 'https://placehold.jp/300x200.png?text=No+Image';
             let clean = url.trim();
-            // Googleドライブの共有リンクを画像埋め込み用に変換
             if(clean.includes("drive.google.com") && clean.includes("/view")) {
                 return clean.replace("/view", "/preview").replace("file/d/", "uc?id=").replace("/preview", "&export=view");
             }
@@ -189,13 +196,11 @@
             if(data.length === 0) { list.innerHTML = '<div style="text-align:center; padding:40px; color:#aaa;">該当する店舗が見つかりません</div>'; return; }
 
             data.forEach(shop => {
-                // 画像処理（複数対応＆URL自動修正）
                 const shopImgs = shop.image ? shop.image.split(',') : [];
                 const mainImg = formatImageUrl(shopImgs[0]);
 
                 if(shop.lat && shop.lng) {
                     const marker = L.marker([shop.lat, shop.lng]).addTo(map);
-                    // ★ピン詳細のカスタマイズ（カテゴリを詳細と同じタグ風に、定休日追加）
                     marker.bindPopup(`<div>
                         <img src="${mainImg}" class="popup-img" referrerpolicy="no-referrer">
                         <div class="popup-body">
@@ -223,7 +228,6 @@
             const url = shop.url ? `<div class="info-row"><div class="info-icon"><i class="fa-solid fa-globe"></i></div><div class="info-content"><a href="${shop.url}" target="_blank" class="info-link">公式サイト</a></div></div>` : '';
 
             let imgSec = '';
-            // ★詳細画面のみスライダー表示（複数画像がある場合）
             if (isDetail && shop.image && shop.image.includes(',')) {
                 let slides = '';
                 shop.image.split(',').forEach(src => {
@@ -235,16 +239,17 @@
                 imgSec = `<img src="${imgUrl}" class="card-img" referrerpolicy="no-referrer" onclick="openImageModal('${imgUrl}')">`;
             }
 
-            // ★クーポンボタン復活ロジック
+            // ★クーポンボタンロジックの強化
             let couponHtml = '';
             if (shop.coupon_imgs) {
                 const imgList = shop.coupon_imgs.split(',');
-                const urlList = shop.coupon_urls ? shop.coupon_urls.split(',') : [];
+                // GASからのURLがカンマ区切り文字列で来ているか、なければ空配列
+                const urlList = (shop.coupon_urls || "").split(',');
                 let slides = '';
                 imgList.forEach((img, i) => {
-                    const cImg = formatImageUrl(img); 
-                    // クーポンURLがある場合はボタン、なければdisabled
-                    const cUrl = urlList[i] ? urlList[i].trim() : (shop.coupon_url || "");
+                    const cImg = formatImageUrl(img);
+                    // 対応するURLを取得、なければ空文字
+                    const cUrl = urlList[i] ? urlList[i].trim() : "";
                     const btn = cUrl 
                         ? `<a href="${cUrl}" target="_blank" class="coupon-btn">クーポンを使う</a>` 
                         : `<span class="coupon-btn disabled">クーポンなし</span>`;
@@ -278,7 +283,6 @@
             const shop = allData.find(s => s.id == id); if (!shop) return;
             const shopImgs = shop.image ? shop.image.split(',') : [];
             const mainImg = formatImageUrl(shopImgs[0]);
-            // 詳細モードONで作成
             const html = createCardHTML(shop, mainImg, true);
             const content = document.getElementById('detail-content');
             content.innerHTML = `<div id="detail-close-btn" onclick="document.getElementById('detail-modal').style.display='none'">×</div><div class="card" style="margin-bottom:0; box-shadow:none; border:none; border-radius:16px;">${html}</div>`;
